@@ -3,5 +3,5 @@
     <node pkg="gps_transform" type="gps_transform" name="gps_transform" output="screen">
     </node>
     <!-- Start RViz -->
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gps_transform)/rviz/rviz.rviz"/>
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gps_transform)/rviz/rviz.rviz"/> -->
 </launch>
