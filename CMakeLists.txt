@@ -38,6 +38,6 @@ include_directories(
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SOURCE)
 # message("===================${SOURCE}============================")
 
-add_executable(${PROJECT_NAME} ${SOURCE})
+add_executable(${PROJECT_NAME}_node ${SOURCE})
 
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})

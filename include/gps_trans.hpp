@@ -47,7 +47,7 @@ private:
     Eigen::Vector3d Ecef2Enu(const Eigen::Vector3d &xyz);
     Eigen::Matrix3d Ecef2EnuMatrix(const Eigen::Vector3d &ref_xyz, double ref_lat, double ref_lon);
 
-    Eigen::Matrix3d Enu2BodyMatrix(const double &current_deg_with_north);
+    void Enu2BodyMatrix(const double &current_deg_with_north);
     Eigen::Vector3d Enu2Body(const double &before_x, const double &before_y, const double &before_z);
 
 public:
@@ -118,10 +118,10 @@ void GpsTransform::add_gps_msg(const sensor_msgs::NavSatFix::ConstPtr &msg)
         pose.pose.position.y = point_enu.y();
         pose.pose.position.z = point_enu.z();
 
-        Eigen::Vector3d afterPose = Enu2Body(point_enu.x(),point_enu.y(),point_enu.z());
-        pose.pose.position.x = afterPose.x();
-        pose.pose.position.y = afterPose.y();
-        pose.pose.position.z = afterPose.z();
+        // Eigen::Vector3d afterPose = Enu2Body(point_enu.x(),point_enu.y(),point_enu.z());
+        // pose.pose.position.x = afterPose.x();
+        // pose.pose.position.y = afterPose.y();
+        // pose.pose.position.z = afterPose.z();
 
         path_enu_.poses.push_back(pose);
         
