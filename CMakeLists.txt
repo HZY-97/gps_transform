@@ -6,12 +6,21 @@ add_compile_options(-std=c++11)
 # set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_BUILD_TYPE "Debug")
 
+set(OPEN_LOG 1) # set 1 open log ; set 0 close log
+
+if(OPEN_LOG)
+    add_compile_definitions(OPEN_LOG)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
   rospy
 )
 set(EIGEN_INCLUDE_DIRS /usr/include/eigen3)
+
+find_package(PCL REQUIRED)
+
 
 ###################################
 ## catkin specific configuration ##
@@ -33,6 +42,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${CMAKE_CURRENT_SOURCE_DIR}/include
   ${EIGEN_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}/pcl-1.9
 )
 
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SOURCE)
@@ -40,4 +51,4 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SOURCE)
 
 add_executable(${PROJECT_NAME}_node ${SOURCE})
 
-target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
