@@ -169,12 +169,17 @@ void GpsTransform::add_gps_msg(const sensor_msgs::NavSatFix::ConstPtr &msg)
         pose.pose.position.z = afterPose.z();
 
         path_enu_.poses.push_back(pose);
+        SIA_INFO("Push_back GPS path over");
         
         //更新里程计信息
         odom_rtk_.header.stamp=msg->header.stamp;
         odom_rtk_.pose.pose.position=pose.pose.position;
 
-        addGpsOdom(odom_rtk_);
+        std::thread addGpsOdomThread = std::thread([&]()->void{
+            addGpsOdom(odom_rtk_);
+        });
+        addGpsOdomThread.detach();
+        
     }
     else
     {
@@ -292,9 +297,9 @@ void GpsTransform::UpdateFinalThetaMatrix(){
         if(!isOverFinalTheta)
         {
             SIA_DEBUG("Thread::UpdateFinalThetaMatrix::if(!isOverFinalTheta)");
-            if(20 < lidar_odom_deq.size())
+            if(200 < lidar_odom_deq.size())
             {
-                // TODO update lidar_odom_deq_mutex
+                // update lidar_odom_deq_mutex
                 std::unique_lock<std::mutex> lidar_lock(lidar_odom_deq_mutex);
                 std::unique_lock<std::mutex> gps_lock(gps_odom_deq_mutex);
 
