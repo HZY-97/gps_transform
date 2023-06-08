@@ -6,6 +6,12 @@ add_compile_options(-std=c++11)
 # set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_BUILD_TYPE "Debug")
 
+set(OPEN_LOG 1) # set 1 open log ; set 0 close log
+
+if(OPEN_LOG)
+    add_compile_definitions(OPEN_LOG)
+endif()
+
 find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   roscpp
