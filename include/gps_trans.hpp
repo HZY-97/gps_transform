@@ -118,10 +118,10 @@ void GpsTransform::add_gps_msg(const sensor_msgs::NavSatFix::ConstPtr &msg)
         pose.pose.position.y = point_enu.y();
         pose.pose.position.z = point_enu.z();
 
-        // Eigen::Vector3d afterPose = Enu2Body(point_enu.x(),point_enu.y(),point_enu.z());
-        // pose.pose.position.x = afterPose.x();
-        // pose.pose.position.y = afterPose.y();
-        // pose.pose.position.z = afterPose.z();
+        Eigen::Vector3d afterPose = Enu2Body(point_enu.x(),point_enu.y(),point_enu.z());
+        pose.pose.position.x = afterPose.x();
+        pose.pose.position.y = afterPose.y();
+        pose.pose.position.z = afterPose.z();
 
         path_enu_.poses.push_back(pose);
         

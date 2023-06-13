@@ -18,11 +18,11 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
     // 5-定位 RTK 浮点解                    2
     // 6-INS 定位解或 GNSS/INS 组合定位解     3
 
-    if(4 == msg->status.status){
+    // if(4 == msg->status.status){
         gps_transform.add_gps_msg(msg);
         path_pub.publish(gps_transform.path_enu());
         odom_pub.publish(gps_transform.odom_enu());
-    }
+    // }
 }
 
 int main(int argc, char** argv)
