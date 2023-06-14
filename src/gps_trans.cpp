@@ -32,7 +32,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "my_node");
     ros::NodeHandle nh;
 
-    ros::Subscriber gps_sub = nh.subscribe<sensor_msgs::NavSatFix>("/hc_driver/gps_data", 1000, gpsCallback);
+    ros::Subscriber gps_sub = nh.subscribe<sensor_msgs::NavSatFix>("/hc_driver/gps_data", 10, gpsCallback);
     path_pub = nh.advertise<nav_msgs::Path>("/gps_path_enu", 10);
     odom_pub = nh.advertise<nav_msgs::Odometry>("/gps_odom_enu", 10);
     ros::spin();
