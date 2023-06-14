@@ -18,6 +18,8 @@ void gpsCallback(const sensor_msgs::NavSatFix::ConstPtr &msg)
     // 5-定位 RTK 浮点解                    2
     // 6-INS 定位解或 GNSS/INS 组合定位解     3
 
+    printf("GPS_STATE: %d\n",msg->status.status);
+
     // if(4 == msg->status.status){
         gps_transform.add_gps_msg(msg);
         path_pub.publish(gps_transform.path_enu());
@@ -30,7 +32,7 @@ int main(int argc, char** argv)
     ros::init(argc, argv, "my_node");
     ros::NodeHandle nh;
 
-    ros::Subscriber gps_sub = nh.subscribe<sensor_msgs::NavSatFix>("/hc_driver/gps_data", 10, gpsCallback);
+    ros::Subscriber gps_sub = nh.subscribe<sensor_msgs::NavSatFix>("/hc_driver/gps_data", 1000, gpsCallback);
     path_pub = nh.advertise<nav_msgs::Path>("/gps_path_enu", 10);
     odom_pub = nh.advertise<nav_msgs::Odometry>("/gps_odom_enu", 10);
     ros::spin();
