@@ -120,6 +120,9 @@ void GpsTransform::add_gps_msg(const sensor_msgs::NavSatFix::ConstPtr &msg)
         pose.pose.position.y = point_enu.y();
         pose.pose.position.z = point_enu.z();
 
+        std::cout<<"========================"<<std::endl;
+        std::cout<<"x = "<<pose.pose.position.x<<" y = "<<pose.pose.position.y<<" z = "<<pose.pose.position.z<<std::endl;
+
         // Eigen::Vector3d afterPose = Enu2Body(point_enu.x(),point_enu.y(),point_enu.z());
         // pose.pose.position.x = afterPose.x();
         // pose.pose.position.y = afterPose.y();
