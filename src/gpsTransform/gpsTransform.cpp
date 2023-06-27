@@ -1,70 +1,15 @@
-#pragma once
+#include "gpsTransform/gpsTransform.h"
 
-#include <Eigen/Core>
-#include <Eigen/Dense>
-#include <Eigen/Geometry>
-
-#include <nav_msgs/Odometry.h>
-#include <nav_msgs/Path.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/NavSatFix.h>
-#include <vector>
-
-#include "siasunLog.h"
-
-class GpsTransform {
-private:
-    const double PI = 3.14159265358979323846;
-    // WGS84 参数
-    const double EARTH_RADIUS = 6378137.0;        // WGS84 GPS坐标系的长半轴半径
-    const double e2           = 0.00669438002290; // WGS84 GPS坐标系的椭球第一偏心率
-
-    bool            initialized_ = false;
-    Eigen::Matrix3d matrix_ecef_2_enu_; // ecef到enu的变换矩阵
-    Eigen::Matrix3d matrix_enu_2_body_; // enu到body的变换矩阵
-
-    nav_msgs::Path     path_enu_;       // 换到ENU坐标系下的轨迹
-    nav_msgs::Odometry odom_rtk_;
-
-    std::vector<Eigen::Vector3d> path_ecef_;
-
-    // 判断是否是第一次接收gps数据，只有第一次接收，才初始化enu到body的旋转矩阵
-    bool  isFirstGps;
-    int   usefulNums;
-    float degVec [ 4 ];
-
-    // 世界坐标系信息
-    struct {
-        double          lon;      // 经度
-        double          lat;      //  纬度
-        Eigen::Vector3d xyz_ecef; // 参考点的地心地固坐标
-    } world_orign_;
-
-private:
-    Eigen::Vector3d Lla2Xyz( double B, double L, double H );
-    Eigen::Vector3d Ecef2Enu( const Eigen::Vector3d &xyz );
-    Eigen::Matrix3d Ecef2EnuMatrix( const Eigen::Vector3d &ref_xyz, double ref_lat, double ref_lon );
-
-    void            Enu2BodyMatrix( const double &current_deg_with_north );
-    Eigen::Vector3d Enu2Body( const double &before_x, const double &before_y, const double &before_z );
-
-public:
-    GpsTransform();
-    GpsTransform( double ref_lat, double ref_lon,
-                  double ref_alt ); //选定参考点的纬度经度高度
-    void               add_gps_msg( const sensor_msgs::NavSatFix::ConstPtr &msg );
-    nav_msgs::Path     path_enu() { return path_enu_; };
-    nav_msgs::Odometry odom_enu() { return odom_rtk_; };
-};
+namespace RoboSLAM3
+{
+namespace GpsTrans
+{
 
 GpsTransform::GpsTransform() {
     path_enu_.header.frame_id = "map";
     odom_rtk_.header.frame_id = "map";
 
     isFirstGps = true;
-    usefulNums = 0;
 }
 
 //这个函数还没有测试过
@@ -75,7 +20,7 @@ GpsTransform::GpsTransform( double ref_lat, double ref_lon, double ref_alt ) {
     //初始化站心坐标
 
     //计算参考点的ecef坐标
-    auto ref_ecef = Lla2Xyz( ref_lat, ref_lon, ref_alt );
+    auto ref_ecef = Lla2Ecef( ref_lat, ref_lon, ref_alt );
 
     world_orign_.lat      = ref_lat;
     world_orign_.lon      = ref_lon;
@@ -87,28 +32,14 @@ GpsTransform::GpsTransform( double ref_lat, double ref_lon, double ref_alt ) {
     initialized_ = true;
 }
 
-void GpsTransform::add_gps_msg( const sensor_msgs::NavSatFix::ConstPtr &msg ) {
+void GpsTransform::ReceiveGpsMsg( const sensor_msgs::NavSatFix::ConstPtr &msg ) {
     if ( isFirstGps && !isnan( msg->position_covariance [ 0 ] ) )
     {
-        if ( usefulNums < 5 )
-        {
-            degVec [ usefulNums ] = msg->position_covariance [ 0 ];
-            Enu2BodyMatrix( degVec [ usefulNums ] );
-            usefulNums++;
-        }
-        else
-        {
-            float degSum = 0;
-            for ( int i = 0; i < 5; i++ )
-            {
-                degSum += degVec [ i ];
-            }
-            Enu2BodyMatrix( degSum / 5 );
-            isFirstGps = false;
-        }
+        Enu2BodyMatrix( msg->position_covariance [ 0 ] );
+        isFirstGps = false;
     }
 
-    path_ecef_.emplace_back( Lla2Xyz( msg->latitude, msg->longitude, msg->altitude ) );
+    path_ecef_.emplace_back( Lla2Ecef( msg->latitude, msg->longitude, msg->altitude ) );
     if ( initialized_ )
     {
         const auto &point_ecef = path_ecef_.back();
@@ -152,7 +83,7 @@ void GpsTransform::add_gps_msg( const sensor_msgs::NavSatFix::ConstPtr &msg ) {
 }
 
 // 维经高转到地心地固坐标系下
-Eigen::Vector3d GpsTransform::Lla2Xyz( double lat, double lon, double alt ) {
+Eigen::Vector3d GpsTransform::Lla2Ecef( double lat, double lon, double alt ) {
     lat = lat * M_PI / 180.0; // 转弧度表示
     lon = lon * M_PI / 180.0; // 转弧度表示
 
@@ -185,7 +116,6 @@ Eigen::Matrix3d GpsTransform::Ecef2EnuMatrix( const Eigen::Vector3d &ref_xyz, do
     return R;
 }
 
-// 计算enu到body的旋转矩阵
 void GpsTransform::Enu2BodyMatrix( const double &current_deg_with_north ) {
     float tmpNorthDeg = current_deg_with_north - 90;
 
@@ -226,3 +156,6 @@ Eigen::Vector3d GpsTransform::Enu2Body( const double &before_x, const double &be
 Eigen::Vector3d GpsTransform::Ecef2Enu( const Eigen::Vector3d &xyz ) {
     return matrix_ecef_2_enu_ * ( xyz - world_orign_.xyz_ecef );
 }
+
+} // namespace GpsTrans
+} // namespace RoboSLAM3

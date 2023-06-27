@@ -3,14 +3,9 @@ project(gps_transform)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
-# set(CMAKE_BUILD_TYPE "Release")
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
+# set(CMAKE_BUILD_TYPE "Debug")
 
-set(OPEN_LOG 1) # set 1 open log ; set 0 close log
-
-if(OPEN_LOG)
-  add_definitions(-DOPEN_LOG)
-endif()
 
 find_package(catkin REQUIRED COMPONENTS
   nav_msgs
@@ -32,7 +27,7 @@ include_directories(
   ${EIGEN_INCLUDE_DIRS}
 )
 
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src SOURCE)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src/gpsTransform SOURCE)
 # message("===================${SOURCE}============================")
 
 add_executable(${PROJECT_NAME}_node ${SOURCE})

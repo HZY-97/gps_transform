@@ -1,5 +1,6 @@
 <launch>
     <!-- Start gps trans -->
+    <rosparam file="$(find lio_sam)/config/params_liosam.yaml" command="load" />
     <node pkg="gps_transform" type="gps_transform_node" name="gps_transform_node" output="screen">
     </node>
     <!-- Start RViz -->
