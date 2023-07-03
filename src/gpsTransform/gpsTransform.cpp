@@ -10,10 +10,14 @@ GpsTransform::GpsTransform() {
     odom_rtk_.header.frame_id = "map";
 
     isFirstGps = true;
+
+    m_gpsPathPcl.reset( new pcl::PointCloud<PointType>() );
+    m_yaw = 0.0;
+    matrix_enu_2_body_.Identity();
 }
 
 //这个函数还没有测试过
-GpsTransform::GpsTransform( double ref_lat, double ref_lon, double ref_alt ) {
+GpsTransform::GpsTransform( double ref_lat, double ref_lon, double ref_alt, double yaw ) {
     path_enu_.header.frame_id = "map";
     odom_rtk_.header.frame_id = "map";
 
@@ -22,26 +26,32 @@ GpsTransform::GpsTransform( double ref_lat, double ref_lon, double ref_alt ) {
     //计算参考点的ecef坐标
     auto ref_ecef = Lla2Ecef( ref_lat, ref_lon, ref_alt );
 
-    world_orign_.lat      = ref_lat;
-    world_orign_.lon      = ref_lon;
+    world_orign_.lat = ref_lat;
+    world_orign_.lon = ref_lon;
+    world_orign_.alt = ref_alt;
+
     world_orign_.xyz_ecef = ref_ecef;
 
     // 计算ECEF到ENU坐标系的变换矩阵
     matrix_ecef_2_enu_ = Ecef2EnuMatrix( world_orign_.xyz_ecef, world_orign_.lat, world_orign_.lon );
 
+    // 计算ENU到BODY坐标系的变换矩阵
+    Enu2BodyMatrix( yaw );
+
+    m_gpsPathPcl.reset( new pcl::PointCloud<PointType>() );
+    isFirstGps = true;
+    m_yaw      = 0.0;
+
     initialized_ = true;
 }
 
 void GpsTransform::ReceiveGpsMsg( const sensor_msgs::NavSatFix::ConstPtr &msg ) {
-    if ( isFirstGps && !isnan( msg->position_covariance [ 0 ] ) )
-    {
-        Enu2BodyMatrix( msg->position_covariance [ 0 ] );
-        isFirstGps = false;
-    }
+    m_currentGpsTime = msg->header.stamp;
 
     path_ecef_.emplace_back( Lla2Ecef( msg->latitude, msg->longitude, msg->altitude ) );
     if ( initialized_ )
     {
+        static int  id         = 0;
         const auto &point_ecef = path_ecef_.back();
         auto        point_enu  = Ecef2Enu( point_ecef );
 
@@ -52,14 +62,22 @@ void GpsTransform::ReceiveGpsMsg( const sensor_msgs::NavSatFix::ConstPtr &msg ) 
         pose.pose.position.y = point_enu.y();
         pose.pose.position.z = point_enu.z();
 
+        Eigen::Vector3d afterPose = Enu2Body( point_enu.x(), point_enu.y(), point_enu.z() );
+        pose.pose.position.x      = afterPose.x();
+        pose.pose.position.y      = afterPose.y();
+        pose.pose.position.z      = afterPose.z();
+
         std::cout << "========================" << std::endl;
-        std::cout << "x = " << pose.pose.position.x << " y = " << pose.pose.position.y
+        std::cout << "GPS----x = " << pose.pose.position.x << " y = " << pose.pose.position.y
                   << " z = " << pose.pose.position.z << std::endl;
 
-        // Eigen::Vector3d afterPose =
-        // Enu2Body(point_enu.x(),point_enu.y(),point_enu.z()); pose.pose.position.x
-        // = afterPose.x(); pose.pose.position.y = afterPose.y();
-        // pose.pose.position.z = afterPose.z();
+        pcl::PointXYZI tmpPose;
+        tmpPose.x         = pose.pose.position.x;
+        tmpPose.y         = pose.pose.position.y;
+        tmpPose.z         = pose.pose.position.z;
+        tmpPose.intensity = id;
+        id++;
+        m_gpsPathPcl->push_back( tmpPose );
 
         path_enu_.poses.push_back( pose );
 
@@ -73,11 +91,35 @@ void GpsTransform::ReceiveGpsMsg( const sensor_msgs::NavSatFix::ConstPtr &msg ) 
         // 初始化参考点
         world_orign_.lat      = msg->latitude;
         world_orign_.lon      = msg->longitude;
+        world_orign_.alt      = msg->altitude;
         world_orign_.xyz_ecef = path_ecef_.front();
 
         // 计算ECEF到ENU坐标系的变换矩阵
         matrix_ecef_2_enu_ = Ecef2EnuMatrix( world_orign_.xyz_ecef, world_orign_.lat, world_orign_.lon );
 
+        if ( isFirstGps && !isnan( msg->position_covariance [ 0 ] ) )
+        {
+            Enu2BodyMatrix( msg->position_covariance [ 0 ] );
+            isFirstGps = false;
+        }
+
+        m_yaw = msg->position_covariance [ 0 ];
+
+        std::ofstream outfile( GpsParam::GetInstance()->savePCDDirectory + "gpsConfig.txt", std::ios::trunc );
+        if ( outfile.is_open() )
+        {
+            outfile << "FirstWithNorth:" << std::fixed << std::setprecision( 8 ) << m_yaw << std::endl;
+            outfile << "Latitude:" << std::fixed << std::setprecision( 8 ) << world_orign_.lat << std::endl;
+            outfile << "Longitude:" << std::fixed << std::setprecision( 8 ) << world_orign_.lon << std::endl;
+            outfile << "Altitude:" << std::fixed << std::setprecision( 8 ) << world_orign_.alt << std::endl;
+
+            outfile.close();
+            std::cout << "gpsConfig.txt文件已成功创建并写入。" << std::endl;
+        }
+        else
+        {
+            std::cout << "无法创建文件！" << std::endl;
+        }
         initialized_ = true;
     }
 }

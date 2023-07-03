@@ -1,0 +1,8 @@
+<launch>
+    <!-- Start gps trans -->
+    <rosparam file="$(find lio_sam)/config/params_liosam.yaml" command="load" />
+    <node pkg="gps_transform" type="icpGpsLidarPath_Tool" name="icpGpsLidarPath_Tool" output="screen">
+    </node>
+    <!-- Start RViz -->
+    <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gps_transform)/rviz/rviz.rviz"/> -->
+</launch>
