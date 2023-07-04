@@ -105,16 +105,19 @@ void GpsTransform::ReceiveGpsMsg( const sensor_msgs::NavSatFix::ConstPtr &msg ) 
 
         m_yaw = msg->position_covariance [ 0 ];
 
-        std::ofstream outfile( GpsParam::GetInstance()->savePCDDirectory + "gpsConfig.txt", std::ios::trunc );
+        std::ofstream outfile( GpsParam::GetInstance()->savePCDDirectory + "gpsConfig.json", std::ios::trunc );
         if ( outfile.is_open() )
         {
-            outfile << "FirstWithNorth:" << std::fixed << std::setprecision( 8 ) << m_yaw << std::endl;
-            outfile << "Latitude:" << std::fixed << std::setprecision( 8 ) << world_orign_.lat << std::endl;
-            outfile << "Longitude:" << std::fixed << std::setprecision( 8 ) << world_orign_.lon << std::endl;
-            outfile << "Altitude:" << std::fixed << std::setprecision( 8 ) << world_orign_.alt << std::endl;
+            nlohmann::json json;
+            json [ "FirstWithNorth" ] = m_yaw;
+            json [ "Latitude" ]       = world_orign_.lat;
+            json [ "Longitude" ]      = world_orign_.lon;
+            json [ "Altitude" ]       = world_orign_.alt;
+
+            outfile << json.dump( 4 );
 
             outfile.close();
-            std::cout << "gpsConfig.txt文件已成功创建并写入。" << std::endl;
+            std::cout << "gpsConfig.json文件已成功创建并写入。" << std::endl;
         }
         else
         {

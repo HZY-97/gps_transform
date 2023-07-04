@@ -15,6 +15,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include "gpsTransform/gpsParam.h"
+#include "nlohmann/single_include/json.hpp"
 
 namespace RoboSLAM3
 {

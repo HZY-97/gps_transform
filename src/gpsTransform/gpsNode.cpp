@@ -8,6 +8,7 @@
 
 #include "gpsTransform/gpsTransform.h"
 #include "gpsTransform/gpsParam.h"
+#include "nlohmann/single_include/json.hpp"
 
 using namespace RoboSLAM3::GpsTrans;
 
@@ -17,9 +18,7 @@ GpsTransform                *gpsTransform;
 std::map<std::string, float> configMap;
 
 void sigintHandler( int sig );
-void parseConfigFile( const std::string &fileName );
 void gpsCallback( const sensor_msgs::NavSatFix::ConstPtr &msg );
-void updateConfigFile( const std::string &fileName );
 
 int main( int argc, char **argv ) {
     ros::init( argc, argv, "gps_transform_node" );
@@ -37,15 +36,20 @@ int main( int argc, char **argv ) {
     }
     else if ( 1 == slamMethord ) // LOCAT
     {
-        parseConfigFile( GpsParam::GetInstance()->loadPCDDirectory + "gpsConfig.txt" );
-        auto it_yaw = configMap.find( "FirstWithNorth" );
-        auto it_lat = configMap.find( "Latitude" );
-        auto it_lon = configMap.find( "Longitude" );
-        auto it_alt = configMap.find( "Altitude" );
-        if ( it_lat != configMap.end() && it_lon != configMap.end() && it_alt != configMap.end() &&
-             it_yaw != configMap.end() )
+        std::ifstream inputFile( GpsParam::GetInstance()->loadPCDDirectory + "gpsConfig.json" );
+        if ( inputFile.is_open() )
         {
-            gpsTransform = new GpsTransform( it_lat->second, it_lon->second, it_alt->second, it_yaw->second );
+            nlohmann::json json      = nlohmann::json::parse( inputFile );
+            double         m_yaw     = json [ "FirstWithNorth" ];
+            double         latitude  = json [ "Latitude" ];
+            double         longitude = json [ "Longitude" ];
+            double         altitude  = json [ "Altitude" ];
+
+            gpsTransform = new GpsTransform( latitude, longitude, altitude, m_yaw );
+        }
+        else
+        {
+            std::cout << "无法打开文件。" << std::endl;
         }
     }
     else if ( 2 == slamMethord ) // SLAM
@@ -76,41 +80,10 @@ void sigintHandler( int sig ) {
         pcl::io::savePCDFileBinary( GpsParam::GetInstance()->savePCDDirectory + "gpsPath.pcd",
                                     *gpsTransform->GetGpsPath() );
 
-        // updateConfigFile( GpsParam::GetInstance()->savePCDDirectory + "gpsConfig.txt" );
         std::cout << "Saving gpsPath Finished" << std::endl;
     }
 
     ros::shutdown(); // 关闭ROS节点
-}
-
-void parseConfigFile( const std::string &fileName ) {
-    std::ifstream inputFile( fileName );
-
-    if ( inputFile.is_open() )
-    {
-        std::string line;
-        while ( std::getline( inputFile, line ) )
-        {
-            size_t delimiterPos = line.find( ":" );
-            if ( delimiterPos != std::string::npos )
-            {
-                std::string key         = line.substr( 0, delimiterPos );
-                std::string valueString = line.substr( delimiterPos + 1 );
-                try
-                {
-                    double value      = std::stod( valueString );
-                    configMap [ key ] = value;
-                } catch ( const std::exception &e )
-                { std::cout << "Failed to convert value to double for key: " << key << std::endl; }
-            }
-        }
-
-        inputFile.close();
-    }
-    else
-    {
-        std::cout << "parseConfigFile :: Failed to open the file." << std::endl;
-    }
 }
 
 void gpsCallback( const sensor_msgs::NavSatFix::ConstPtr &msg ) {
@@ -133,28 +106,4 @@ void gpsCallback( const sensor_msgs::NavSatFix::ConstPtr &msg ) {
     path_pub.publish( gpsTransform->GetEnuPath() );
     odom_pub.publish( gpsTransform->GetEnuOdom() );
     // }
-}
-
-void updateConfigFile( const std::string &fileName ) {
-    if ( configMap.empty() )
-    {
-        std::cout << "updateConfigFile::ERROR!!! configMap is empyt" << std::endl;
-        return;
-    }
-    std::ofstream outputFile( fileName );
-
-    if ( outputFile.is_open() )
-    {
-        for ( const auto &pair : configMap )
-        {
-            outputFile << pair.first << ":" << std::fixed << std::setprecision( 8 ) << pair.second << std::endl;
-        }
-
-        outputFile.close();
-        std::cout << "File updated." << std::endl;
-    }
-    else
-    {
-        std::cout << "Failed to open the file for writing." << std::endl;
-    }
 }
