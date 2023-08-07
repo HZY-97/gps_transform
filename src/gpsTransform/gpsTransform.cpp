@@ -62,14 +62,22 @@ void GpsTransform::ReceiveGpsMsg( const sensor_msgs::NavSatFix::ConstPtr &msg ) 
         pose.pose.position.y = point_enu.y();
         pose.pose.position.z = point_enu.z();
 
-        Eigen::Vector3d afterPose = Enu2Body( point_enu.x(), point_enu.y(), point_enu.z() );
-        pose.pose.position.x      = afterPose.x();
-        pose.pose.position.y      = afterPose.y();
-        pose.pose.position.z      = afterPose.z();
+        // Eigen::Vector3d afterPose = Enu2Body( point_enu.x(), point_enu.y(), point_enu.z() );
+        // pose.pose.position.x      = afterPose.x();
+        // pose.pose.position.y      = afterPose.y();
+        // pose.pose.position.z      = afterPose.z();
 
         std::cout << "========================" << std::endl;
         std::cout << "GPS----x = " << pose.pose.position.x << " y = " << pose.pose.position.y
                   << " z = " << pose.pose.position.z << std::endl;
+
+        // std::ofstream gpsPath( "/home/cat/Pictures/RoboSLAMMap/LOAM6AXIS/gpsPath.txt", std::ios::app );
+        // gpsPath << std::fixed << std::setprecision( 10 );
+        // gpsPath << "time=" << ros::Time::now().toSec() << ",x=" << pose.pose.position.x << ",y=" << pose.pose.position.y
+        //         << ",z=" << pose.pose.position.z << ",yaw=" << msg->position_covariance [ 0 ] << std::endl;
+        // gpsPath << ros::Time::now().toSec() << " " << pose.pose.position.x << " " << pose.pose.position.y << " "
+        //         << pose.pose.position.z << " " << msg->position_covariance [ 0 ] << std::endl;
+        // gpsPath.close();
 
         pcl::PointXYZI tmpPose;
         tmpPose.x         = pose.pose.position.x;
