@@ -71,11 +71,13 @@ void GpsTransform::ReceiveGpsMsg( const sensor_msgs::NavSatFix::ConstPtr &msg ) 
         std::cout << "GPS----x = " << pose.pose.position.x << " y = " << pose.pose.position.y
                   << " z = " << pose.pose.position.z << std::endl;
 
-        std::ofstream gpsPath( GpsParam::GetInstance()->savePCDDirectory + "gpsPath.txt", std::ios::app );
-        gpsPath << std::fixed << std::setprecision( 10 );
-        gpsPath << "x=" << pose.pose.position.x << ",y=" << pose.pose.position.y << ",z=" << pose.pose.position.z
-                << ",yaw=" << msg->position_covariance [ 0 ] << std::endl;
-        gpsPath.close();
+        // std::ofstream gpsPath( "/home/cat/Pictures/RoboSLAMMap/LOAM6AXIS/gpsPath.txt", std::ios::app );
+        // gpsPath << std::fixed << std::setprecision( 10 );
+        // gpsPath << "time=" << ros::Time::now().toSec() << ",x=" << pose.pose.position.x << ",y=" << pose.pose.position.y
+        //         << ",z=" << pose.pose.position.z << ",yaw=" << msg->position_covariance [ 0 ] << std::endl;
+        // gpsPath << ros::Time::now().toSec() << " " << pose.pose.position.x << " " << pose.pose.position.y << " "
+        //         << pose.pose.position.z << " " << msg->position_covariance [ 0 ] << std::endl;
+        // gpsPath.close();
 
         pcl::PointXYZI tmpPose;
         tmpPose.x         = pose.pose.position.x;
